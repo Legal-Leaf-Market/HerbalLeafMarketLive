@@ -110,8 +110,11 @@
   .canna-chip{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;color:var(--sage-dk);background:rgba(58,123,80,.1);border:1px solid rgba(58,123,80,.3);border-radius:999px;padding:3px 10px;text-decoration:none;transition:.15s}
   .canna-chip:hover{background:rgba(58,123,80,.18)} .canna-chip .ci{font-size:.9rem;line-height:1} .canna-chip .cl{color:var(--gold-dk);text-decoration:underline;text-underline-offset:2px}
   @media(max-width:760px){.xsell{flex-direction:column;text-align:center;gap:10px} .xsell-go{width:100%}}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:transform .25s,box-shadow .25s;position:relative;border-top:4px solid var(--sage)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:transform .25s,box-shadow .25s;position:relative;border-top:4px solid var(--sage);scroll-margin-top:90px}
   .card:hover{transform:translateY(-7px);box-shadow:0 26px 54px rgba(30,45,25,.24)}
+  /* ===== Email deep-link "zoom to card" (matches index.js hlmCardHref_ + focus.js) ===== */
+  .card.hlm-focus{border-top-color:var(--gold);box-shadow:0 0 0 3px var(--gold),0 26px 60px rgba(201,150,47,.5);z-index:6;animation:hlmZoom 2.6s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes hlmZoom{0%{transform:scale(1)}14%{transform:scale(1.06);box-shadow:0 0 0 4px var(--gold),0 34px 70px rgba(201,150,47,.6)}45%{transform:scale(1.02)}70%{transform:scale(1.03)}100%{transform:scale(1);box-shadow:0 0 0 3px var(--gold),0 26px 60px rgba(201,150,47,.45)}}
   .thumb{height:230px;background:radial-gradient(circle at 50% 40%,#f0ead9,#e7dcc4);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
   .thumb img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
   .card:hover .thumb img{transform:scale(1.07)}
@@ -308,7 +311,7 @@
   .hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:26px}
   .hero-cta2{cursor:pointer;font-family:var(--sans);font-weight:700;letter-spacing:.4px;font-size:1.02rem;color:#fff;background:linear-gradient(135deg,var(--sage),var(--sage-dk));padding:16px 40px;border-radius:999px;border:2px solid var(--gold);transition:transform .2s,box-shadow .2s,filter .2s;box-shadow:0 12px 30px rgba(47,107,79,.34)}
   .hero-cta2:hover{transform:translateY(-3px);filter:brightness(1.07);box-shadow:0 18px 40px rgba(38,90,57,.42)}
-  @media(prefers-reduced-motion:reduce){.hero-sprig{animation:none !important} .cart-btn.pulse{animation:none !important} .wish-btn.on svg{animation:none !important}}
+  @media(prefers-reduced-motion:reduce){.hero-sprig{animation:none !important} .cart-btn.pulse{animation:none !important} .wish-btn.on svg{animation:none !important} .card.hlm-focus{animation:none !important;transform:none !important}}
   @media(max-width:760px){
     .wrap{padding:0 16px}
     .hero{padding:40px 0 30px} .hero-sprig{width:74px;opacity:.45;top:0}
@@ -544,5 +547,7 @@
 <script src="/products.js"></script>
 <script src="/knowledge.js"></script>
 <script src="/app.js"></script>
+<!-- Email deep-link "zoom to card": reads ?focus=<id> / #<id> from index.js hlmCardHref_ and highlights the matching product card -->
+<script src="/focus.js"></script>
 </body>
 </html>
