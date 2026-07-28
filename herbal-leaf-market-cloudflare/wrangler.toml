@@ -1,9 +1,8 @@
-database_id = "dd3e781d-3d3f-4167-ac14-ea245efb7704"   # from step 1
-id          = "6c013b464ccd46269fdf77fe786c9f0f"   # from step 2
 
 
 
-name = "herbal-leaf-market"
+
+name = "herballeafmarketlive"
 main = "src/index.js"
 compatibility_date = "2026-07-28"
 workers_dev = true
