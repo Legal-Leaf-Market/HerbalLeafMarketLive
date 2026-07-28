@@ -219,6 +219,11 @@ function gardenSignupSubmit(){
 let CART={}; let SELV={};
 function loadCart(){ try{CART=JSON.parse(localStorage.getItem("hlm_cart"))||{};}catch(e){CART={};} if(typeof CART!=="object"||CART===null)CART={}; }
 function saveCart(){ try{localStorage.setItem("hlm_cart",JSON.stringify(CART));}catch(e){} }
+/* Persist the drop-down size choices so background re-sends (gardenFlushWatches)
+   report the size the user actually picked, not the drop-down default.
+   Same pattern/guards as hlm_cart & hlm_wish. */
+function loadSelv(){ try{SELV=JSON.parse(localStorage.getItem("hlm_selv"))||{};}catch(e){SELV={};} if(typeof SELV!=="object"||SELV===null)SELV={}; }
+function saveSelv(){ try{localStorage.setItem("hlm_selv",JSON.stringify(SELV));}catch(e){} }
 function cartCount(){ var n=0; for(var k in CART)n+=CART[k]; return n; }
 function baseId(lineKey){ return String(lineKey).split("::")[0]; }
 function variantOfKey(lineKey){ var p=String(lineKey).split("::"); return p.length>1?p[1]:""; }
@@ -227,7 +232,7 @@ function variantById(p,vid){ if(!p||!p.variants)return null; for(var i=0;i<p.var
 function lineInfo(lineKey){ var p=productById(lineKey); if(!p)return {p:null,variantId:"",price:0,sizeTxt:"",wooId:""}; var vid=variantOfKey(lineKey); var v=vid?variantById(p,vid):null;
   var price=v?v.price:(Number(p.price)||0); var sizeTxt=v?v.title:((p.unit&&p.unit!=="from")?p.unit:""); var wooId=v&&v.wooId?v.wooId:(p.variants&&p.variants.length===1&&p.variants[0].wooId?p.variants[0].wooId:""); return {p:p,variantId:vid,price:price,sizeTxt:sizeTxt,wooId:wooId}; }
 function cartItemsForVendor(v){ var o=[]; for(var k in CART){var p=productById(k);if(p&&p.vendor===v){var li=lineInfo(k);o.push({p:p,qty:CART[k],key:k,variantId:li.variantId,price:li.price,sizeTxt:li.sizeTxt,wooId:li.wooId});}} return o; }
-function selVariant(id,idx){ SELV[id]=parseInt(idx,10)||0; var p=productById(id); if(!p||!p.variants)return; var v=p.variants[SELV[id]];
+function selVariant(id,idx){ SELV[id]=parseInt(idx,10)||0; saveSelv(); var p=productById(id); if(!p||!p.variants)return; var v=p.variants[SELV[id]];
   var el=document.getElementById("price-"+id); if(el&&v){ var cp=getCoupon(p.vendor); if(cp){var d=v.price*(1-cp.percent/100); el.innerHTML='<span style="text-decoration:line-through;color:var(--muted);font-weight:400;font-size:.85rem;margin-right:7px;">$'+v.price.toFixed(2)+'</span>$'+d.toFixed(2);} else { el.textContent="$"+v.price.toFixed(2); } } }
 function addToCart(id){ var p=productById(id); var key=id;
   if(p&&p.variants&&p.variants.length>1){ var idx=SELV[id]||0; var v=p.variants[idx]; if(v&&v.id) key=id+"::"+v.id; }
@@ -530,7 +535,7 @@ function loadLiveInventory(){ if(typeof google==="undefined" || !google.script |
 function hideLoader(){ var el=document.getElementById("hlmLoader"); if(el){ el.classList.add("hide"); setTimeout(function(){ el.style.display="none"; },600); } }
 
 function hlmInit(){ try{ if(hlmHandleGo()) return; var y=document.getElementById("year"); if(y)y.textContent=new Date().getFullYear();
-  loadCart(); loadWish(); loadRitualFB(); PRODUCTS=normalizeCategories(getSeedProducts());
+  loadCart(); loadWish(); loadSelv(); loadRitualFB(); PRODUCTS=normalizeCategories(getSeedProducts());
   buildFilters(); buildStoreFilter(); render(); updateCartBadge(); renderCart(); updateAccountUI(); setAuthMode("signup");
   loadLiveInventory(); loadNSSIds(); loadMatrixRules();
 }catch(e){} setTimeout(hideLoader, 3500); }
