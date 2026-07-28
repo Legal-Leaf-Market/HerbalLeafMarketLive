@@ -28,6 +28,16 @@ function hlmHandleGo(){ var go=""; try{ var m=(window.location.search||"").match
   try{ if(typeof google!=="undefined"&&google.script&&google.script.run){ google.script.run.hlmLogClick({type:"garden-out",device:(isMobileDevice()?"mobile":"desktop"),page:"go",email:((getUser()||{}).email||""),product:go}); } }catch(e){}
   try{ window.location.replace(go); }catch(e){ window.location.href=go; } return true; }
 function hlmImg(u){ if(!u) return u; if(u.indexOf("smokingblends.com")!==-1){ return "https://wsrv.nl/?url=ssl:"+u.replace(/^https?:\/\//,"")+"&w=648&h=648&fit=cover&output=webp"; } return u; }
+/* Email "Add to Herbal Leaf Market Cart" deep link: ?add=<id or id::variantId>[&qty=N].
+   Adds the exact variant to the local HLM cart, then hlmInit opens (zooms to) the cart.
+   The key format is identical to addToCart()'s, so checkout hands off the right variant. */
+function hlmHandleAddToCart(){ var raw=""; try{ var m=(window.location.search||"").match(/[?&]add=([^&]*)/); if(m&&m[1]) raw=decodeURIComponent(m[1]); }catch(e){}
+  if(!raw) return false;
+  var qty=1; try{ var mq=(window.location.search||"").match(/[?&]qty=([^&]*)/); if(mq&&mq[1]) qty=parseInt(decodeURIComponent(mq[1]),10)||1; }catch(e){} if(qty<1) qty=1;
+  CART[raw]=(CART[raw]||0)+qty; saveCart();
+  /* Strip add/qty from the URL so a refresh (or re-open) doesn't add it again. */
+  try{ var u=new URL(window.location.href); u.searchParams.delete("add"); u.searchParams.delete("qty"); window.history.replaceState({},document.title,u.pathname+(u.search||"")+(u.hash||"")); }catch(e){}
+  return true; }
 
 var BB_IDS={"50-pack-original-herbal-cigarettes":239,"agarwood-rope-incense":240,"air-tea-kettle-dry-herb-vaporizer":412,"amazon":24,"amazon-chew":56,"amazon-herbal-cigarettes":198,"amazon-herbal-cigarettes-50-pack":243,"amazon-herbal-cigars":432,"amazon-liquid-herbz":37,"amazon-liquid-herbz-1ml-cartridge-clove":216,"amazon-liquid-herbz-2ml-disposable":208,"amazon-rolliez":32,"bear-blend":16,"black-sage-smudge-sticks-mini":303,"calendula-smokable-herbs-non-og":157,"dream-lodge":26,"dream-lodge-chew":59,"dream-lodge-herbal-cigarettes":135,"dream-lodge-herbal-cigarettes-50-pack":261,"dream-lodge-liquid-herbz":39,"dream-lodge-liquid-herbz-1ml-cartridge-coconut":218,"dream-lodge-liquid-herbz-2ml-disposable-coconut":210,"elements-rolling-papers":105,"flower-of-life":28,"frankincense-rope-incense":299,"hemp-prerolls":229,"herbal-cigarette-flower-of-life":187,"herbal-cigars":411,"herbal-cigars-3":433,"herbalicious":177,"hexahedron-concrete-incense-burner":226,"holiday-white-sage":93,"juniper-rope-incense":315,"kin-nik-nik":17,"kin-nik-nik-chew":55,"kin-nik-nik-herbal-cigarettes":174,"kin-nik-nik-herbal-cigarettes-50-pack":238,"kin-nik-nik-herbal-cigars":434,"kin-nik-nik-liquid-herbz":36,"kin-nik-nik-liquid-herbz-1ml-cartridge":215,"kin-nik-nik-liquid-herbz-2ml-disposable":207,"liquid-herbz-flower-of-life":123,"lobelia-smokable-herbs-non-og":163,"loose-cedar-bulk":180,"lovers-ritual-bundle":297,"mintz":18,"mintz-chew":61,"mintz-herbal-cigarettes":186,"mintz-herbal-cigarettes-50-pack":237,"mintz-herbal-cigars":436,"mintz-liquid-herbz":35,"mintz-liquid-herbz-1ml-cartridge-spearmint":219,"mintz-liquid-herbz-2ml-disposable-spearmint":211,"moon":27,"moon-chew":57,"moon-cigarettes-50-pack":462,"moon-herbal-cigarettes":137,"moon-herbal-cigars":435,"moon-liquid-herbz":40,"moon-liquid-herbz-1ml-cartridge-berry":220,"moon-liquid-herbz-2ml-disposable-berry":212,"nepali-desert-rose-rope-incense":317,"nepali-himalayan-cedar-rope-incense":241,"nepali-patchouli-rope-incense":305,"nepali-sai-baba-nag-champa-dhoop-rope-incense-copy":191,"nepali-sandalwood-rope-incense":190,"nepali-sandalwood-rope-incense-and-burner":183,"nepali-three-mixed-rope-incense":307,"nova-bubbler-attachment-stainless-steel-v2":227,"nova-carbon-black-v2":223,"nova-silver-v2":231,"og-bear-blend-chew":60,"og-bear-blend-liquid-herbz":34,"original-herbal-cigarettes":139,"original-herbal-cigars":437,"original-liquid-herbz-1ml-cartridge-vanilla":217,"original-liquid-herbz-2ml-disposable-vanilla":209,"palo-santo-rope-incense":311,"passion-flower-smokable-herbs":214,"quadrate-concrete-incense-burner":242,"raw-classic-pre-rolled-cone-6-piece":267,"raw-hemp-wick-10ft":179,"raw-rolling-machine-classic":188,"raw-rolling-papers":175,"raw-rolling-tips":189,"rolliez-flower-of-life-tubes-of-two":287,"shaman":54,"shaman-1ml-cartridge":440,"shaman-disposable":441,"shaman-herbal-cigarettes":141,"shaman-herbal-cigars":438,"shaman-rolliez-tube-of-2":443,"silver-510-thread-battery-variable-twist":228,"skullcap-smokable-herbs":293,"smokers-essentials-kit":195,"soapstone-smudge-bowl":184,"spikenard-rope-incense":313,"spiral-design-clay-rope-incense-burner":301,"tube-of-2-dream-lodge-rolliez":277,"tube-of-2-mintz-rolliez":275,"tube-of-two-amazon-rolliez":285,"tube-of-two-kin-nik-nik-rolliez":281,"tube-of-two-moon-rolliez":278,"tube-of-two-original-rolliez":279,"tube-of-two-vizion-rolliez":283,"vizion":25,"vizion-chew":58,"vizion-herbal-cigarettes":185,"vizion-herbal-cigarettes-50-pack":236,"vizion-herbal-cigars":439,"vizion-liquid-herbz":38,"vizion-liquid-herbz-1ml-cartridge-citrus":221,"vizion-liquid-herbz-2ml-disposable-citrus":213,"vizion-rolliez":29,"white-bear-claw-tin":197,"white-sage-cedar-large-smudge-stick-8-9-inch":309,"wildcrafted-sage-with-lavender-and-rosemary":77,"wooden-cobra-tripod-stand-for-smudge-bowl":225};
 function bbIdFor(p){ if(p.bbId) return p.bbId; var m=(p.url||"").match(/\/product\/([^\/?#]+)/); return m?(BB_IDS[m[1]]||null):null; }
@@ -179,9 +189,18 @@ function wishCount(){ return Object.keys(WISH).length; }
 function isWished(id){ return !!WISH[baseId(id)]; }
 function absUrl(u){ u=String(u||""); if(!u||u==="#") return ""; if(/^https?:\/\//i.test(u)) return u; if(u.charAt(0)==="/") return HLM_SHOP_URL+u; return u; }
 function gardenItemSnapshot(id){ var p=productById(id); if(!p) return null; var li=lineInfo(id);
-  var price=(p.variants&&p.variants.length>1)?(Number(p.price)||0):(li.price||Number(p.price)||0);
+  /* Capture the shopper's currently-selected variant — the SAME one addToCart() would add —
+     so the emailed "Add to Herbal Leaf Market Cart" button can add the exact size/variant. */
+  var variantId="", variantTitle="", vprice=null;
+  if(p.variants&&p.variants.length){ var vidx=(p.variants.length>1)?(SELV[id]||0):0; var vsel=p.variants[vidx]||p.variants[0];
+    if(vsel){ if(vsel.id) variantId=String(vsel.id); variantTitle=vsel.title||""; vprice=(Number(vsel.price)||0); } }
+  /* Cart key mirrors addToCart(): base id, or "id::variantId" when a variant exists. */
+  var cartKey=variantId?(p.id+"::"+variantId):p.id;
+  /* With a specific variant captured we show that variant's exact price (no "from"/"+"). */
+  var price=variantId?(vprice!=null?vprice:(Number(p.price)||0)):((p.variants&&p.variants.length>1)?(Number(p.price)||0):(li.price||Number(p.price)||0));
   var raw=absUrl(p.url); var url = raw || absUrl(vendorOrigin(p.vendor)) || HLM_SHOP_URL;   /* never dead */
-  return { id:p.id, name:p.name||"", vendor:p.vendor||"", price:price, unit:p.unit||"", image:hlmImg(p.image||""), url:hlmOutUrl(p.vendor,url), blurb:p.blurb||"", category:p.category||"" }; }
+  return { id:p.id, cartKey:cartKey, variantId:variantId, variantTitle:variantTitle,
+    name:p.name||"", vendor:p.vendor||"", price:price, unit:(variantId?"":(p.unit||"")), image:hlmImg(p.image||""), url:hlmOutUrl(p.vendor,url), blurb:p.blurb||"", category:p.category||"" }; }
 function gardenAllSnapshots(){ return Object.keys(WISH).map(gardenItemSnapshot).filter(Boolean); }
 var _gardenPrompted=false;
 function toggleWish(id){ id=baseId(id); var adding=!WISH[id]; if(adding) WISH[id]=1; else delete WISH[id]; saveWish();
@@ -520,8 +539,9 @@ function loadLiveInventory(){ if(typeof google==="undefined" || !google.script |
 function hideLoader(){ var el=document.getElementById("hlmLoader"); if(el){ el.classList.add("hide"); setTimeout(function(){ el.style.display="none"; },600); } }
 
 function hlmInit(){ try{ if(hlmHandleGo()) return; var y=document.getElementById("year"); if(y)y.textContent=new Date().getFullYear();
-  loadCart(); loadWish(); loadRitualFB(); PRODUCTS=normalizeCategories(getSeedProducts());
+  loadCart(); loadWish(); loadRitualFB(); var _addedFromEmail=hlmHandleAddToCart(); PRODUCTS=normalizeCategories(getSeedProducts());
   buildFilters(); buildStoreFilter(); render(); updateCartBadge(); renderCart(); updateAccountUI(); setAuthMode("signup");
   loadLiveInventory(); loadNSSIds(); loadMatrixRules();
+  if(_addedFromEmail){ openCart(); pulseCart(); hlmToast("Added to your Herbal Leaf Market cart \uD83C\uDF3F"); }
 }catch(e){} setTimeout(hideLoader, 3500); }
 if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded",hlmInit); } else { hlmInit(); }
