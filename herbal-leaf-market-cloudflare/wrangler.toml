@@ -16,12 +16,12 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "HLM_DB"
 database_name = "herbal-leaf-market"
-database_id = "PASTE_D1_DATABASE_ID_HERE"
+database_id = "dd3e781d-3d3f-4167-ac14-ea245efb7704"
 
 # npx wrangler kv namespace create HLM_KV  -> paste id
 [[kv_namespaces]]
 binding = "HLM_KV"
-id = "PASTE_KV_NAMESPACE_ID_HERE"
+id = "6c013b464ccd46269fdf77fe786c9f0f"
 
 # Mon 12:00 UTC = weekly click report ; Mon 13:00 UTC = weekly Garden digest
 [triggers]
