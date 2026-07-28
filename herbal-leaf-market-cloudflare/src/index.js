@@ -467,6 +467,18 @@ function hlmCardHref_(it) {
   if (!id) return SITE_URL + "/";
   return SITE_URL + "/?focus=" + encodeURIComponent(id);
 }
+/* "Add to Herbal Leaf Cart" deep link. We send the exact line key
+ * (<id>::<variantId>) the storefront uses internally, so the SELECTED size
+ * lands in the cart — not just the product. app.js -> hlmHandleAdd() reads
+ * ?add=, drops the line into CART and opens the cart drawer. If no variant was
+ * captured we send the bare id and the site falls back to the drop-down default. */
+function hlmCartAddHref_(it) {
+  const id = String((it && it.id) || "").trim();
+  if (!id) return SITE_URL + "/";
+  const vid = String((it && it.variantId) || "").trim();
+  const key = vid ? (id + "::" + vid) : id;
+  return SITE_URL + "/?add=" + encodeURIComponent(key);
+}
 /* One clean, fully-quoted, fully-escaped card row. Every attribute value passes
  * through hlmEsc_ so a stray quote/ampersand in a name or image URL can never
  * break out of an attribute and mangle the surrounding <a>/<img> tags. */
@@ -489,7 +501,8 @@ function hlmItemCardHtml_(it) {
   const variantHtml = variant ? ('<div style="display:inline-block;font:700 12px sans-serif;color:#265a39;background:#eaf1e6;border:1px solid #cddcc8;border-radius:999px;padding:3px 10px;margin:3px 0">Size: ' + variant + '</div>') : '';
   const priceHtml = price ? ('<div style="font:800 16px Georgia,serif;color:#1f6b52;margin:2px 0">' + price + '</div>') : '';
   const blurbHtml = blurb ? ('<div style="font:400 13px sans-serif;color:#6d6a58;line-height:1.5;margin-top:4px">' + blurb + '</div>') : '';
-  const cta = '<div style="margin-top:10px"><a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;background:#c85a34;color:#ffffff;text-decoration:none;font:700 13px sans-serif;padding:10px 18px;border-radius:999px">View on Herbal Leaf Market &rarr;</a></div>';
+  const addUrl = hlmEsc_(hlmCartAddHref_(it));
+  const cta = '<div style="margin-top:10px"><a href="' + addUrl + '" target="_blank" rel="noopener" style="display:inline-block;background:#c85a34;color:#ffffff;text-decoration:none;font:700 13px sans-serif;padding:10px 18px;border-radius:999px">&#128722; Add to Herbal Leaf Cart</a></div>';
 
   return '<tr><td style="padding:14px 0;border-bottom:1px solid #eee">'
        +   '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%"><tr>'
