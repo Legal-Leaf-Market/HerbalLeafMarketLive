@@ -1,0 +1,13 @@
+{
+  "name": "herbal-leaf-market",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute herbal-leaf-market --file=./schema.sql --remote",
+    "db:init:local": "wrangler d1 execute herbal-leaf-market --file=./schema.sql",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": { "wrangler": "^3.90.0" }
+}

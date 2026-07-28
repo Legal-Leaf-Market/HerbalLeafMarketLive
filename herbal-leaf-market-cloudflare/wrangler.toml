@@ -1,0 +1,29 @@
+name = "herbal-leaf-market"
+main = "src/index.js"
+compatibility_date = "2026-07-28"
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# npx wrangler d1 create herbal-leaf-market  -> paste database_id
+[[d1_databases]]
+binding = "HLM_DB"
+database_name = "herbal-leaf-market"
+database_id = "PASTE_D1_DATABASE_ID_HERE"
+
+# npx wrangler kv namespace create HLM_KV  -> paste id
+[[kv_namespaces]]
+binding = "HLM_KV"
+id = "PASTE_KV_NAMESPACE_ID_HERE"
+
+# Mon 12:00 UTC = weekly click report ; Mon 13:00 UTC = weekly Garden digest
+[triggers]
+crons = ["0 12 * * 1", "0 13 * * 1"]
+
+[vars]
+PUBLIC_URL = "https://herballeafmarket.com"
+
+# Secrets (wrangler secret put ...):
+#   ADMIN_PW  RESEND_API_KEY  SITE_FROM_EMAIL  REPORT_EMAIL
