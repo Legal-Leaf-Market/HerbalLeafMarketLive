@@ -509,13 +509,14 @@ function render(){
     var canna=cannaChip(p);
     var xtag = isCBD(p) ? '<a class="cbd-xtag" href="'+SISTER_URL+'" target="_blank" rel="noopener" title="More CBD options &amp; better prices at Legal Leaf Market" onclick="hlmTrack(\'sister-card\',{vendor:\'Legal Leaf Market\',product:'+JSON.stringify(p.name)+',category:\'CBD\'})">More CBD &amp; better prices at our sister shop \u2197</a>' : "";
     return header+'<article class="card" id="'+p.id+'" data-id="'+p.id+'"><div class="thumb">'+(p.badge?'<span class="badge">'+p.badge+'</span>':"")+wbtn+imgHtml+'</div><div class="card-body"><div class="vendor">'+p.vendor+'</div><h3>'+p.name+'</h3>'+(canna?('<div class="canna-wrap">'+canna+'</div>'):"")+'<p class="blurb">'+p.blurb+'</p><div class="meta">'+priceHtml+'<span class="unit">'+unitTxt+'</span></div>'+couponHtml+sizeHtml+'<button class="add-cart" onclick="addToCart(\''+p.id+'\')">Add to Herbal Leaf Market Cart</button>'+xtag+'</div></article>'; }).join("");
-  grid.innerHTML=(showXsell?cbdCrossBanner():"")+body; }
+  grid.innerHTML=(showXsell?cbdCrossBanner():"")+body;
+  try{ document.dispatchEvent(new CustomEvent("hlm:render",{detail:{count:items.length,inventoryLoaded:!!window.__hlmInvLoaded}})); }catch(e){} }
 
 function mergeLive(liveData){ var seed=normalizeCategories(getSeedProducts()); var live=normalizeCategories(liveData.slice());
   var lv={}; live.forEach(function(p){ if(p.vendor) lv[p.vendor]=true; }); return seed.filter(function(p){ return !lv[p.vendor]; }).concat(live); }
 function loadLiveInventory(){ if(typeof google==="undefined" || !google.script || !google.script.run){ hideLoader(); return; }
-  google.script.run.withSuccessHandler(function(data){ try{ if(Array.isArray(data)&&data.length){ PRODUCTS=mergeLive(data); applyNSSIds(); buildFilters(); buildStoreFilter(); render(); renderCart(); } }catch(e){} hideLoader(); })
-    .withFailureHandler(function(){ hideLoader(); }).getInventory(); }
+  google.script.run.withSuccessHandler(function(data){ try{ if(Array.isArray(data)&&data.length){ PRODUCTS=mergeLive(data); applyNSSIds(); buildFilters(); buildStoreFilter(); window.__hlmInvLoaded=true; render(); renderCart(); } }catch(e){} try{ window.__hlmInvLoaded=true; document.dispatchEvent(new CustomEvent("hlm:inventory")); }catch(e){} hideLoader(); })
+    .withFailureHandler(function(){ try{ window.__hlmInvLoaded=true; document.dispatchEvent(new CustomEvent("hlm:inventory")); }catch(e){} hideLoader(); }).getInventory(); }
 function hideLoader(){ var el=document.getElementById("hlmLoader"); if(el){ el.classList.add("hide"); setTimeout(function(){ el.style.display="none"; },600); } }
 
 function hlmInit(){ try{ if(hlmHandleGo()) return; var y=document.getElementById("year"); if(y)y.textContent=new Date().getFullYear();
