@@ -9,9 +9,13 @@
  *   Client contract preserved via /api/rpc + public/hlm-api.js shim.
  *
  *   --- CHANGE IN THIS REVISION ---
- *   Email product links now point to herballeafmarket.com deep-linked to the
- *   item's own card via ?focus=<id>#<id> (instead of the external vendor URL),
- *   so the browser lands on / zooms to the correct card. See hlmCardHref_().
+ *   EMAIL RENDER FIX: rebuilt the Garden email so anchors/images can no longer
+ *   leak as raw text in strict clients (Outlook/Gmail mobile). Every tag is
+ *   emitted on one clean, fully-quoted, fully-escaped line; the product deep
+ *   link now uses only ?focus=<id> (the redundant #<id> fragment was dropped —
+ *   focus.js reads ?focus first — because URL fragments were triggering the
+ *   client's link rewriter and mangling the <a> tags). The unsubscribe line is
+ *   now a proper, spaced anchor (fixes the "…comUnsubscribe" run-together bug).
  ***/
 
 const SITE_NAME    = "Herbal Leaf Market";
@@ -453,30 +457,76 @@ function hlmSafeUrl_(u) {
   return SITE_URL;
 }
 /* Deep link back to herballeafmarket.com, anchored/zoomed to the item's own card.
- * Frontend reads either the ?focus=<id> query param OR the #<id> hash to scroll
- * the matching product card into view and highlight ("zoom") it. Falls back to
- * the site home if the item has no id. */
+ * focus.js reads the ?focus=<id> query param and scrolls the matching product
+ * card into view and highlights ("zooms") it. We intentionally DO NOT append a
+ * "#<id>" fragment: some mail clients rewrite/track links and a fragment on top
+ * of the query string was corrupting the <a> tag (URLs leaked as raw text).
+ * ?focus alone is sufficient — focus.js checks it before the hash. */
 function hlmCardHref_(it) {
   const id = String((it && it.id) || "").trim();
   if (!id) return SITE_URL + "/";
-  return SITE_URL + "/?focus=" + encodeURIComponent(id) + "#" + id;
+  return SITE_URL + "/?focus=" + encodeURIComponent(id);
 }
+/* One clean, fully-quoted, fully-escaped card row. Every attribute value passes
+ * through hlmEsc_ so a stray quote/ampersand in a name or image URL can never
+ * break out of an attribute and mangle the surrounding <a>/<img> tags. */
 function hlmItemCardHtml_(it) {
   it = it || {};
-  const url = hlmCardHref_(it); const urlE = hlmEsc_(url);
+  const url  = hlmEsc_(hlmCardHref_(it));
+  const name = hlmEsc_(it.name || "");
+  const vendor = hlmEsc_(it.vendor || "");
+  const blurb = it.blurb ? hlmEsc_(String(it.blurb).slice(0, 150)) : "";
+  const price = (Number(it.price) || 0) > 0 ? ("$" + (Number(it.price).toFixed(2)) + (it.unit === "from" ? " +" : "")) : "";
+
   const imgInner = it.image
-    ? ('' + hlmEsc_(it.image) + ':block;width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid #e0d3bd" />')
+    ? ('<img src="' + hlmEsc_(it.image) + '" width="120" height="120" alt="' + name + '" style="display:block;width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid #e0d3bd" />')
     : '<div style="width:120px;height:120px;border-radius:12px;background:#eef0e2"></div>';
-  const img = '' + urlE + 'blank" style="text-decoration:none">' + imgInner + '</a>';
-  const price = (Number(it.price) || 0) > 0 ? ('$' + (Number(it.price).toFixed(2)) + (it.unit === "from" ? " +" : "")) : "";
-  const cta = '' + urlE + '="_blank" style="display:inline-block;margin-top:8px;background:#c85a34;color:#ffffff;text-decoration:none;font:700 13px sans-serif;padding:10px 18px;border-radius:999px">View on Herbal Leaf Market &rarr;</a>';
-  return '<tr><td style="padding:12px 0;border-bottom:1px solid #eee"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%"><tr><td valign="top" style="width:132px">' + img + '</td><td valign="top" style="padding-left:14px"><div style="font:700 11px sans-serif;letter-spacing:.6px;text-transform:uppercase;color:#265a39">' + hlmEsc_(it.vendor || "") + '</div><div style="font:700 17px Georgia,serif;color:#22271e;margin:2px 0 4px">' + urlE + '="_blank" style="color:#22271e;text-decoration:none">' + hlmEsc_(it.name || "") + '</a></div>' + (price ? ('<div style="font:800 16px Georgia,serif;color:#1f6b52">' + price + '</div>') : '') + (it.blurb ? ('<div style="font:400 13px sans-serif;color:#6d6a58;line-height:1.5;margin-top:4px">' + hlmEsc_(String(it.blurb).slice(0, 150)) + '</div>') : '') + cta + '</td></tr></table></td></tr>';
+
+  const imgCell = '<a href="' + url + '" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">' + imgInner + '</a>';
+
+  const nameHtml = '<a href="' + url + '" target="_blank" rel="noopener" style="color:#22271e;text-decoration:none">' + name + '</a>';
+  const priceHtml = price ? ('<div style="font:800 16px Georgia,serif;color:#1f6b52;margin:2px 0">' + price + '</div>') : '';
+  const blurbHtml = blurb ? ('<div style="font:400 13px sans-serif;color:#6d6a58;line-height:1.5;margin-top:4px">' + blurb + '</div>') : '';
+  const cta = '<div style="margin-top:10px"><a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;background:#c85a34;color:#ffffff;text-decoration:none;font:700 13px sans-serif;padding:10px 18px;border-radius:999px">View on Herbal Leaf Market &rarr;</a></div>';
+
+  return '<tr><td style="padding:14px 0;border-bottom:1px solid #eee">'
+       +   '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%"><tr>'
+       +     '<td valign="top" width="132" style="width:132px">' + imgCell + '</td>'
+       +     '<td valign="top" style="padding-left:14px">'
+       +       '<div style="font:700 11px sans-serif;letter-spacing:.6px;text-transform:uppercase;color:#265a39">' + vendor + '</div>'
+       +       '<div style="font:700 17px Georgia,serif;color:#22271e;margin:2px 0 4px">' + nameHtml + '</div>'
+       +       priceHtml + blurbHtml + cta
+       +     '</td>'
+       +   '</tr></table>'
+       + '</td></tr>';
 }
 function hlmEmailShell_(env, heading, intro, cardsHtml, email) {
   let unsub = "";
   try { unsub = (env.PUBLIC_URL || SITE_URL) + "/?unsub=" + encodeURIComponent(email); }
   catch (e) { unsub = "mailto:" + CONTACT_EMAIL + "?subject=unsubscribe"; }
-  return '<!DOCTYPE html><html><body style="margin:0;background:#f1ead9;padding:24px 0"><table role="presentation" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fdfbf3;border:1px solid #d6c9ac;border-radius:18px;overflow:hidden"><tr><td style="background:linear-gradient(135deg,#3a7b50,#265a39);padding:22px 26px"><div style="font:900 20px Georgia,serif;color:#f5efdd">Herbal Leaf Market</div><div style="font:italic 400 12px Georgia,serif;color:#c9962f;letter-spacing:2px;text-transform:uppercase">botanical apothecary</div></td></tr><tr><td style="padding:24px 26px 6px"><div style="font:900 22px Georgia,serif;color:#2f5d3a">' + hlmEsc_(heading) + '</div><div style="font:400 15px sans-serif;color:#6d6a58;margin:6px 0 8px;line-height:1.5">' + hlmEsc_(intro) + '</div></td></tr><tr><td style="padding:0 26px 18px"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">' + cardsHtml + '</table></td></tr><tr><td style="padding:16px 26px;background:#f6f1e4;border-top:1px solid #e6dcc4"><div style="font:400 11px sans-serif;color:#9c9a84;line-height:1.6">You are receiving this because you created or updated a Garden at Herbal Leaf Market. We link you to independent makers; you complete purchases on their sites. Statements have not been evaluated by the FDA and are not intended to diagnose, treat, cure, or prevent any disease. 21+. ' + hlmEsc_(unsub) + 'Unsubscribe</a>.</div></td></tr></table></body></html>';
+  const unsubE = hlmEsc_(unsub);
+  return '<!DOCTYPE html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /></head>'
+       + '<body style="margin:0;background:#f1ead9;padding:24px 0">'
+       +   '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" width="560" style="max-width:560px;margin:0 auto;background:#fdfbf3;border:1px solid #d6c9ac;border-radius:18px;overflow:hidden">'
+       +     '<tr><td style="background:linear-gradient(135deg,#3a7b50,#265a39);padding:22px 26px">'
+       +       '<div style="font:900 20px Georgia,serif;color:#f5efdd">Herbal Leaf Market</div>'
+       +       '<div style="font:italic 400 12px Georgia,serif;color:#c9962f;letter-spacing:2px;text-transform:uppercase">botanical apothecary</div>'
+       +     '</td></tr>'
+       +     '<tr><td style="padding:24px 26px 6px">'
+       +       '<div style="font:900 22px Georgia,serif;color:#2f5d3a">' + hlmEsc_(heading) + '</div>'
+       +       '<div style="font:400 15px sans-serif;color:#6d6a58;margin:6px 0 8px;line-height:1.5">' + hlmEsc_(intro) + '</div>'
+       +     '</td></tr>'
+       +     '<tr><td style="padding:0 26px 18px">'
+       +       '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%">' + cardsHtml + '</table>'
+       +     '</td></tr>'
+       +     '<tr><td style="padding:16px 26px;background:#f6f1e4;border-top:1px solid #e6dcc4">'
+       +       '<div style="font:400 11px sans-serif;color:#9c9a84;line-height:1.6">'
+       +         'You are receiving this because you created or updated a Garden at Herbal Leaf Market. We link you to independent makers; you complete purchases on their sites. Statements have not been evaluated by the FDA and are not intended to diagnose, treat, cure, or prevent any disease. 21+.'
+       +         '<br /><a href="' + unsubE + '" style="color:#9c3d1a;text-decoration:underline">Unsubscribe</a> at any time.'
+       +       '</div>'
+       +     '</td></tr>'
+       +   '</table>'
+       + '</body></html>';
 }
 function hlmEsc_(s) {
   return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
