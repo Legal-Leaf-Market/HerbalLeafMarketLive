@@ -9,13 +9,17 @@
  *   Client contract preserved via /api/rpc + public/hlm-api.js shim.
  *
  *   --- CHANGE IN THIS REVISION ---
- *   EMAIL RENDER FIX: rebuilt the Garden email so anchors/images can no longer
- *   leak as raw text in strict clients (Outlook/Gmail mobile). Every tag is
- *   emitted on one clean, fully-quoted, fully-escaped line; the product deep
- *   link now uses only ?focus=<id> (the redundant #<id> fragment was dropped —
- *   focus.js reads ?focus first — because URL fragments were triggering the
- *   client's link rewriter and mangling the <a> tags). The unsubscribe line is
- *   now a proper, spaced anchor (fixes the "…comUnsubscribe" run-together bug).
+ *   EMAIL = ADD-TO-CART: the Garden email now carries the on-site "Add to Herbal
+ *   Leaf Market Cart" action instead of the old "zoom to card" link. The card CTA
+ *   (and image/name) link to ?add=<id or id::variantId>, using the variant the
+ *   shopper had selected when they saved the find (captured by gardenItemSnapshot
+ *   in app.js as it.cartKey / it.variantId / it.variantTitle). app.js's
+ *   hlmHandleAddToCart() adds that exact variant to the local cart and opens the
+ *   cart drawer. The card also shows "Size: <variant>" when a variant exists.
+ *   (?focus= zoom behavior was abandoned; focus.js simply no-ops with no ?focus.)
+ *   Retained from the prior fix: every tag is emitted on one clean, fully-quoted,
+ *   fully-escaped line (no raw-text leaks in Outlook/Gmail mobile), a single query
+ *   param with no "#" fragment, and a properly spaced Unsubscribe anchor.
  ***/
 
 const SITE_NAME    = "Herbal Leaf Market";
@@ -456,16 +460,18 @@ function hlmSafeUrl_(u) {
   if (u.charAt(0) === "/") return SITE_URL + u;
   return SITE_URL;
 }
-/* Deep link back to herballeafmarket.com, anchored/zoomed to the item's own card.
- * focus.js reads the ?focus=<id> query param and scrolls the matching product
- * card into view and highlights ("zooms") it. We intentionally DO NOT append a
- * "#<id>" fragment: some mail clients rewrite/track links and a fragment on top
- * of the query string was corrupting the <a> tag (URLs leaked as raw text).
- * ?focus alone is sufficient — focus.js checks it before the hash. */
+/* Deep link back to herballeafmarket.com that ADDS THIS EXACT ITEM TO THE CART.
+ * (We abandoned the old ?focus= "zoom to card" behavior.) The link carries the
+ * cart key — "id" or "id::variantId" — captured at save time by
+ * gardenItemSnapshot(). app.js's hlmHandleAddToCart() reads ?add=, adds that
+ * exact variant to the local HLM cart, then opens ("zooms to") the cart drawer.
+ * The key format is identical to the on-site "Add to Herbal Leaf Market Cart"
+ * button, so the vendor checkout hands off the correct variant. We keep this to
+ * a single query param (no "#" fragment) so mail clients can't mangle the <a>. */
 function hlmCardHref_(it) {
-  const id = String((it && it.id) || "").trim();
-  if (!id) return SITE_URL + "/";
-  return SITE_URL + "/?focus=" + encodeURIComponent(id);
+  const key = String((it && (it.cartKey || it.id)) || "").trim();
+  if (!key) return SITE_URL + "/";
+  return SITE_URL + "/?add=" + encodeURIComponent(key);
 }
 /* One clean, fully-quoted, fully-escaped card row. Every attribute value passes
  * through hlmEsc_ so a stray quote/ampersand in a name or image URL can never
@@ -476,6 +482,7 @@ function hlmItemCardHtml_(it) {
   const name = hlmEsc_(it.name || "");
   const vendor = hlmEsc_(it.vendor || "");
   const blurb = it.blurb ? hlmEsc_(String(it.blurb).slice(0, 150)) : "";
+  const size = (it.variantTitle && String(it.variantTitle).trim()) ? hlmEsc_(String(it.variantTitle).trim()) : "";
   const price = (Number(it.price) || 0) > 0 ? ("$" + (Number(it.price).toFixed(2)) + (it.unit === "from" ? " +" : "")) : "";
 
   const imgInner = it.image
@@ -486,8 +493,9 @@ function hlmItemCardHtml_(it) {
 
   const nameHtml = '<a href="' + url + '" target="_blank" rel="noopener" style="color:#22271e;text-decoration:none">' + name + '</a>';
   const priceHtml = price ? ('<div style="font:800 16px Georgia,serif;color:#1f6b52;margin:2px 0">' + price + '</div>') : '';
+  const sizeHtml = size ? ('<div style="font:600 12px sans-serif;color:#6d6a58;margin:1px 0 2px">Size: ' + size + '</div>') : '';
   const blurbHtml = blurb ? ('<div style="font:400 13px sans-serif;color:#6d6a58;line-height:1.5;margin-top:4px">' + blurb + '</div>') : '';
-  const cta = '<div style="margin-top:10px"><a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;background:#c85a34;color:#ffffff;text-decoration:none;font:700 13px sans-serif;padding:10px 18px;border-radius:999px">View on Herbal Leaf Market &rarr;</a></div>';
+  const cta = '<div style="margin-top:10px"><a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;background:#c85a34;color:#ffffff;text-decoration:none;font:700 13px sans-serif;padding:10px 18px;border-radius:999px">Add to Herbal Leaf Market Cart &rarr;</a></div>';
 
   return '<tr><td style="padding:14px 0;border-bottom:1px solid #eee">'
        +   '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%"><tr>'
@@ -495,7 +503,7 @@ function hlmItemCardHtml_(it) {
        +     '<td valign="top" style="padding-left:14px">'
        +       '<div style="font:700 11px sans-serif;letter-spacing:.6px;text-transform:uppercase;color:#265a39">' + vendor + '</div>'
        +       '<div style="font:700 17px Georgia,serif;color:#22271e;margin:2px 0 4px">' + nameHtml + '</div>'
-       +       priceHtml + blurbHtml + cta
+       +       priceHtml + sizeHtml + blurbHtml + cta
        +     '</td>'
        +   '</tr></table>'
        + '</td></tr>';
