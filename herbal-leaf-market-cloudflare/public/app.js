@@ -5,21 +5,25 @@ function getSeedProducts(){ return (typeof SEED_PRODUCTS!=="undefined"&&Array.is
 var SISTER_URL="https://legal-leafmarket.com";
 var FACTS_URL="?page=facts";
 var HLM_SHOP_URL="https://herballeafmarket.com";  /* email/button fallback */
-const AWIN_PUBLISHER_ID = "";
+const AWIN_PUBLISHER_ID = "3004653";
 const BRAND_AFFILIATES = {
-  "Bear Blend":{awinmid:"",couponCode:"JACOBKENNEDY",percent:10},
-  "Puff Herbals":{awinmid:"",couponCode:"JACOBKENNEDY",percent:15},
+  "Bear Blend":{awinmid:"",ref:"JAC6375",couponCode:"JACOBKENNEDY",percent:10},
+  "Puff Herbals":{awinmid:"74076",couponCode:"JACOBKENNEDY",percent:15},
   "Secret Nature":{awinmid:"",couponCode:"JACOBKENNEDY",percent:15},
   "Soul CBD":{awinmid:"",couponCode:"JACOBKENNEDY",percent:20},
-  "Natural Smoke Shop":{awinmid:"",couponCode:"JACOBKENNEDY",percent:10},
+  "Natural Smoke Shop":{awinmid:"",trackParam:{key:"tr",val:"138"},couponCode:"JACOBKENNEDY",percent:10},
   "Charlotte's Web":{awinmid:"",couponCode:"",percent:0}
 };
 function getCoupon(vendor){ var c=BRAND_AFFILIATES[vendor]; if(!c||!c.couponCode||!(c.percent>0))return null; return {code:c.couponCode,percent:c.percent}; }
 function vendorCode(vendor){ var c=BRAND_AFFILIATES[vendor]; return (c&&c.couponCode)?c.couponCode:""; }
 var SHIPPING={ "Bear Blend":{flat:6.95,freeOver:75},"Puff Herbals":{flat:5.99,freeOver:50},"Secret Nature":{flat:6.00,freeOver:50},"Soul CBD":{flat:5.95,freeOver:60},"Natural Smoke Shop":{flat:5.95,freeOver:35},"Charlotte's Web":{flat:5.99,freeOver:50} };
 function shipInfo(vendor,after){ var s=SHIPPING[vendor]; if(!s) return {cost:0,free:true,freeOver:0}; var free=(s.freeOver>0&&after>=s.freeOver)||!(s.flat>0); return {cost:free?0:s.flat,free:free,freeOver:s.freeOver||0}; }
+function appendParam(url,key,val){ if(!url||url==="#"||!/^https?:\/\//i.test(url)) return url; if(new RegExp("[?&]"+key+"=").test(url)) return url; return url+(url.indexOf("?")===-1?"?":"&")+key+"="+encodeURIComponent(val); }
 function withAffiliate(product){ var base=(product&&product.url)?product.url:"#"; var cfg=BRAND_AFFILIATES[product.vendor];
-  if(cfg && AWIN_PUBLISHER_ID && cfg.awinmid){ return "https://www.awin1.com/cread.php?awinmid="+encodeURIComponent(cfg.awinmid)+"&awinaffid="+encodeURIComponent(AWIN_PUBLISHER_ID)+"&ued="+encodeURIComponent(base); } return base; }
+  if(cfg && AWIN_PUBLISHER_ID && cfg.awinmid){ return "https://www.awin1.com/cread.php?awinmid="+encodeURIComponent(cfg.awinmid)+"&awinaffid="+encodeURIComponent(AWIN_PUBLISHER_ID)+"&ued="+encodeURIComponent(base); }
+  if(cfg && cfg.ref){ return appendParam(base,"ref",cfg.ref); }
+  if(cfg && cfg.trackParam && cfg.trackParam.key){ return appendParam(base,cfg.trackParam.key,cfg.trackParam.val); }
+  return base; }
 function hlmSiteOrigin(){ try{ return new URL(HLM_SHOP_URL).origin; }catch(e){ return "https://herballeafmarket.com"; } }
 function hlmOutUrl(vendor,endUrl){ var dest=withAffiliate({vendor:vendor,url:endUrl}); if(!dest||dest==="#") dest=endUrl||HLM_SHOP_URL; return hlmSiteOrigin()+"/?go="+encodeURIComponent(dest)+"&ref=herballeafmarket"; }
 function hlmHandleGo(){ var go=""; try{ var m=(window.location.search||"").match(/[?&]go=([^&]*)/); if(m&&m[1]) go=decodeURIComponent(m[1]); }catch(e){}
@@ -322,7 +326,7 @@ function buildBearBlendBookmarklet(pairs){ var items=JSON.stringify(pairs);
     "function fin(){b.textContent='Done! Opening cart...';setTimeout(function(){location.href='/cart'},700)}add(0)})();"; }
 function bearBlendCartPairs(){ var pairs=[], missing=0; for(var k in CART){ var p=productById(k); if(!p||p.vendor!=="Bear Blend")continue; var bid=bbIdFor(p); if(bid){pairs.push([bid,CART[k]]);}else{missing++;} } return { pairs:pairs, missing:missing }; }
 function bearBlendMobileText(){ var items=cartItemsForVendor("Bear Blend"); return "Herbal Leaf Market - Bear Blend cart:\n"+items.map(function(x){return "- "+x.qty+"x "+x.p.name;}).join("\n")+"\n\nCoupon: "+HOUSE_CODE; }
-function shareBearBlend(){ hlmShare("Bear Blend cart", bearBlendMobileText(), "https://bearblend.com/shop"); }
+function shareBearBlend(){ hlmShare("Bear Blend cart", bearBlendMobileText(), withAffiliate({vendor:"Bear Blend",url:"https://bearblend.com/shop"})); }
 function bearBlendCheckout(){ var info=bearBlendCartPairs(); if(!info.pairs.length){ hlmToast("No Bear Blend items ready to send."); return; }
   copyCode(); trackVendorCheckout("Bear Blend");
   if(isMobileDevice()){ var items=cartItemsForVendor("Bear Blend"); copyText(bearBlendMobileText());
@@ -334,7 +338,7 @@ function bearBlendCheckout(){ var info=bearBlendCartPairs(); if(!info.pairs.leng
   var ov=document.getElementById("bbCoOverlay"), md=document.getElementById("bbCoModal"); if(ov)ov.classList.add("open"); if(md)md.classList.add("open"); }
 function closeBearBlendCheckout(){ var ov=document.getElementById("bbCoOverlay"),md=document.getElementById("bbCoModal"); if(ov)ov.classList.remove("open"); if(md)md.classList.remove("open"); }
 function closeBearBlendMobile(){ var ov=document.getElementById("bbMobOverlay"),md=document.getElementById("bbMobModal"); if(ov)ov.classList.remove("open"); if(md)md.classList.remove("open"); }
-function openBearBlendSite(){ window.open("https://bearblend.com/shop","_blank","noopener"); }
+function openBearBlendSite(){ window.open(withAffiliate({vendor:"Bear Blend",url:"https://bearblend.com/shop"}),"_blank","noopener"); }
 
 function naturalSmokeCartItems(){ var out=[], missing=0; var items=cartItemsForVendor("Natural Smoke Shop");
   items.forEach(function(x){ var slug=nssSlug(x.p); if(!slug){ missing++; return; } var entry=[slug,x.qty]; if(x.sizeTxt) entry.push(x.sizeTxt); out.push(entry); }); return { items:out, missing:missing }; }
@@ -352,19 +356,19 @@ function buildNSSBookmarklet(items){ return "javascript:(function(){"+
   "Promise.all(ITEMS.map(resolve)).then(function(list){return g(API+'/cart').then(function(r){return r.headers.get('Nonce')||r.headers.get('X-WC-Store-API-Nonce')||'';}).then(function(n){addAll(n,list,0);});}).catch(function(e){box.textContent='Error: '+e;});"+
   "})();"; }
 function naturalSmokeMobileText(){ var items=cartItemsForVendor("Natural Smoke Shop"); return "Herbal Leaf Market - Natural Smoke Shop cart:\n"+items.map(function(x){return "- "+x.qty+"x "+x.p.name+(x.sizeTxt?(" ("+x.sizeTxt+")"):"");}).join("\n")+"\n\nCoupon: "+HOUSE_CODE; }
-function shareNaturalSmoke(){ hlmShare("Natural Smoke Shop cart", naturalSmokeMobileText(), "https://www.smokingblends.com/shop/"); }
+function shareNaturalSmoke(){ hlmShare("Natural Smoke Shop cart", naturalSmokeMobileText(), withAffiliate({vendor:"Natural Smoke Shop",url:"https://www.smokingblends.com/shop/"})); }
 function nssRenderList(listId){ var items=cartItemsForVendor("Natural Smoke Shop"); var ml=document.getElementById(listId); if(!ml) return 0; var eligible=0;
   ml.innerHTML=items.map(function(x){ var base=(x.p.url||"https://www.smokingblends.com/shop/"); var u=withAffiliate({vendor:"Natural Smoke Shop",url:base}); var wid=x.wooId||""; if(wid) eligible++;
     var label=x.qty+'&times; '+x.p.name+(x.sizeTxt?(' &middot; '+x.sizeTxt):''); var right = wid ? '' : ' <a href="'+u+'" target="_blank" rel="noopener" style="color:var(--sage-dk);font-weight:600">(open &nearr;)</a>';
     return '<li style="list-style:none;margin:7px 0"><label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer"><input type="checkbox" class="nss-pick" '+(wid?'checked':'')+' data-wid="'+wid+'" data-qty="'+x.qty+'" style="margin-top:3px;width:18px;height:18px;accent-color:#2f6b4f"><span>'+label+right+'</span></label></li>'; }).join(""); return eligible; }
 function renderNSSMobileList(){ return nssRenderList("nssMobileList"); }
 function nssToggleAll(ck,listId){ [].slice.call(document.querySelectorAll("#"+(listId||"nssMobileList")+" .nss-pick")).forEach(function(b){ if(b.getAttribute("data-wid")) b.checked=ck; }); }
-function nssViewCart(){ var cartUrl="https://www.smokingblends.com/cart/"; try{ if(NSS_FILL_WIN && !NSS_FILL_WIN.closed){ NSS_FILL_WIN.location.href=cartUrl; NSS_FILL_WIN.focus(); return; } }catch(e){} NSS_FILL_WIN=window.open(cartUrl,"hlmNSSfill"); try{ if(NSS_FILL_WIN) NSS_FILL_WIN.focus(); }catch(e){} }
+function nssViewCart(){ var cartUrl=withAffiliate({vendor:"Natural Smoke Shop",url:"https://www.smokingblends.com/cart/"}); try{ if(NSS_FILL_WIN && !NSS_FILL_WIN.closed){ NSS_FILL_WIN.location.href=cartUrl; NSS_FILL_WIN.focus(); return; } }catch(e){} NSS_FILL_WIN=window.open(cartUrl,"hlmNSSfill"); try{ if(NSS_FILL_WIN) NSS_FILL_WIN.focus(); }catch(e){} }
 function nssShowViewCart(){ ["nssMobViewCart","nssCoViewCart"].forEach(function(id){ var b=document.getElementById(id); if(b){ b.style.display="block"; } }); }
 function nssAddAllSelected(listId){ var boxes=[].slice.call(document.querySelectorAll("#"+(listId||"nssMobileList")+" .nss-pick")); var chosen=boxes.filter(function(b){ return b.checked && b.getAttribute("data-wid"); });
   if(!chosen.length){ hlmToast("Tap an item's (open) link to add it manually."); return; }
   copyCode(); trackVendorCheckout("Natural Smoke Shop"); var origin="https://www.smokingblends.com";
-  var urls=chosen.map(function(b){ return origin+"/cart/?add-to-cart="+encodeURIComponent(b.getAttribute("data-wid"))+"&quantity="+encodeURIComponent(b.getAttribute("data-qty")||"1"); });
+  var urls=chosen.map(function(b){ return withAffiliate({vendor:"Natural Smoke Shop",url:origin+"/cart/?add-to-cart="+encodeURIComponent(b.getAttribute("data-wid"))+"&quantity="+encodeURIComponent(b.getAttribute("data-qty")||"1")}); });
   NSS_FILL_WIN=window.open(urls[0],"hlmNSSfill"); if(!NSS_FILL_WIN){ hlmToast("Allow pop-ups for this site, then tap the button again."); return; }
   try{ NSS_FILL_WIN.focus(); }catch(e){} hlmToast("Adding "+urls.length+" item(s) to Smoking Blends..."); var i=1, total=urls.length;
   (function step(){ if(i>=total){ nssShowViewCart(); return; } setTimeout(function(){ try{ NSS_FILL_WIN.location.href=urls[i]; }catch(e){} i++; step(); }, 2300); })(); if(total===1) nssShowViewCart(); }

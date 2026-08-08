@@ -5,7 +5,7 @@
  * where `self` isn't defined. On Cloudflare it's served as a plain static asset,
  * so `self` (the ServiceWorkerGlobalScope) exists normally. Do NOT template this file.
  */
-const CACHE = "hlm-v1";
+const CACHE = "hlm-v2";
 const PRECACHE = ["/", "/index.html", "/hlm-api.js"];
 
 self.addEventListener("install", (event) => {
