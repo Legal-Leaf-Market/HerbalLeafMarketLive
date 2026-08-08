@@ -1,0 +1,28 @@
+# Line endings are decided HERE, not by whatever core.autocrlf happens to be on
+# a given machine.
+#
+# Why this file exists: this box runs core.autocrlf=true, and the pages captured
+# from production arrived with MIXED CRLF/LF endings. Git refuses to normalize a
+# file whose blob is already mixed (`git ls-files --eol` reports i/mixed), so a
+# one-attribute SVG edit to know-the-facts.html rewrote every line ending and
+# showed up as a 304-line diff. A real change hidden inside several hundred lines
+# of invisible churn is exactly the kind of diff nobody reviews properly.
+#
+# eol=lf (not just text=auto) so the WORKING TREE is LF too. Otherwise git keeps
+# checking these out as CRLF here and re-converting on every commit, and the
+# churn comes straight back the next time a file drifts to mixed.
+#
+# LF is the right choice rather than CRLF: these are static web assets served by
+# a CDN and read by browsers, no Windows-only tooling touches them.
+* text=auto eol=lf
+
+# Never let the above near binary assets -- a stray CRLF->LF pass corrupts an
+# image silently. text=auto already sniffs for binary, but the icons and the
+# favicon are the files it would be most expensive to get wrong.
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.woff  binary
+*.woff2 binary
